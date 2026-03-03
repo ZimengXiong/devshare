@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Devshare</title>
+  <style>
+    :root { color-scheme: dark; --bg:#2C1925; --ink:#f7edf3; --muted:#c9b7c2; --line:#5b4051; --accent:#ffc6df; }
+    * { box-sizing:border-box }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui,-apple-system,sans-serif; }
+    main { width:min(680px,calc(100% - 40px)); margin:14vh auto 8vh; }
+    h1 { margin:0 0 .35rem; font-size:clamp(2.5rem,8vw,5.5rem); line-height:.95; letter-spacing:-.065em; font-weight:650; }
+    .lead { color:var(--muted); max-width:510px; font-size:1.12rem; }
+    pre { margin:3rem 0 1.2rem; padding:1rem 1.1rem; border:1px solid var(--line); border-radius:9px; overflow:auto; background:rgba(255,255,255,.025); color:var(--accent); }
+    .row { display:flex; gap:1rem; flex-wrap:wrap; color:var(--muted); font-size:.9rem; }
+    a { color:var(--ink); text-underline-offset:3px; }
+    footer { margin-top:5rem; padding-top:1rem; border-top:1px solid var(--line); color:var(--muted); font-size:.85rem; }
+  </style>
+</head>
+<body><main>
+  <h1>devshare</h1>
+  <p class="lead">Put a webpage on the internet. Private by default, temporary by default, and one command from anywhere.</p>
+  <pre><code>devshare publish ./dist</code></pre>
+  <div class="row"><span>Files or live ports</span><span>API-key authenticated</span><span>Isolated origins</span></div>
+  <footer>Small infrastructure for unfinished things.</footer>
+</main></body>
+</html>

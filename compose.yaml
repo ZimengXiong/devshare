@@ -1,0 +1,11 @@
+name: devshare
+
+services:
+  devshare:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/var/lib/devshare
+    ports:
+      - "127.0.0.1:8080:8080"

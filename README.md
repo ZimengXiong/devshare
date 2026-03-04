@@ -10,12 +10,17 @@ devshare auth login --url https://share.example.com --token ds_...
 #then...
 devshare publish ./dist
 #or
+devshare publish README.md
+#or
 devshare publish --public --ttl 2h ./dist
 #or
 devshare serve --public 5173
 ```
 
-`publish` uploads a snapshot that survives after the CLI exits. `serve` opens
+`publish` uploads a snapshot that survives after the CLI exits. A single
+Markdown file is rendered into a self-contained, responsive HTML page using
+GitHub-Flavored Markdown, including tables, task lists, autolinks, and
+strikethrough. A single HTML file is published as the site index. `serve` opens
 an outbound WebSocket tunnel to a local HTTP server. The same commands and API
 keys work on laptops, CI workers, agents, and the devshare server itself.
 

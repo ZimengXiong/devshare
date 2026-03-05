@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type oidcMetadata struct {
@@ -27,7 +28,7 @@ func loadOIDCMetadata(issuer string) (oidcMetadata, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&metadata); err != nil {
 		return metadata, fmt.Errorf("OIDC discovery is invalid: %w", err)
 	}
-	if metadata.Issuer != issuer {
+	if strings.TrimRight(metadata.Issuer, "/") != strings.TrimRight(issuer, "/") {
 		return metadata, fmt.Errorf("OIDC issuer mismatch: configured %q but provider reports %q", issuer, metadata.Issuer)
 	}
 	if !hasValue(metadata.ResponseTypes, "code") || (len(metadata.GrantTypes) > 0 && !hasValue(metadata.GrantTypes, "authorization_code")) {

@@ -49,7 +49,7 @@ import (
 //go:embed web/*
 var web embed.FS
 
-const version = "0.3.1"
+const version = "0.3.2"
 
 type Config struct {
 	Listen, PublicURL, SiteDomain, DataDir, BootstrapToken string

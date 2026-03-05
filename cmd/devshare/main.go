@@ -49,7 +49,7 @@ import (
 //go:embed web/*
 var web embed.FS
 
-const version = "0.3.0"
+const version = "0.3.1"
 
 type Config struct {
 	Listen, PublicURL, SiteDomain, DataDir, BootstrapToken string
@@ -77,9 +77,9 @@ func (k fallbackKeySet) VerifySignature(ctx context.Context, jwt string) ([]byte
 }
 
 type Share struct {
-	ID, Hostname, Kind, Visibility, OwnerTokenID, TunnelSecret string
-	ExpiresAt                                                  sql.NullTime
-	CreatedAt                                                  time.Time
+	ID, Hostname, Kind, Format, Visibility, OwnerTokenID, TunnelSecret string
+	ExpiresAt                                                          sql.NullTime
+	CreatedAt                                                          time.Time
 }
 
 type tunnelConn struct {
@@ -247,10 +247,13 @@ func runServer() {
 func (s *Server) migrate() error {
 	_, e := s.db.Exec(`
 CREATE TABLE IF NOT EXISTS tokens(id TEXT PRIMARY KEY, hash TEXT UNIQUE NOT NULL, label TEXT NOT NULL, scopes TEXT NOT NULL, created_at DATETIME NOT NULL, revoked_at DATETIME);
-CREATE TABLE IF NOT EXISTS shares(id TEXT PRIMARY KEY, hostname TEXT UNIQUE NOT NULL, kind TEXT NOT NULL, visibility TEXT NOT NULL, owner_token_id TEXT NOT NULL, tunnel_secret TEXT, expires_at DATETIME, created_at DATETIME NOT NULL);
+CREATE TABLE IF NOT EXISTS shares(id TEXT PRIMARY KEY, hostname TEXT UNIQUE NOT NULL, kind TEXT NOT NULL, format TEXT NOT NULL DEFAULT 'html', visibility TEXT NOT NULL, owner_token_id TEXT NOT NULL, tunnel_secret TEXT, expires_at DATETIME, created_at DATETIME NOT NULL);
 CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, expires_at DATETIME NOT NULL);
 CREATE TABLE IF NOT EXISTS handoffs(code_hash TEXT PRIMARY KEY, email TEXT NOT NULL, hostname TEXT NOT NULL, return_path TEXT NOT NULL, expires_at DATETIME NOT NULL);
-`)
+	`)
+	if e == nil {
+		_, _ = s.db.Exec(`ALTER TABLE shares ADD COLUMN format TEXT NOT NULL DEFAULT 'html'`)
+	}
 	return e
 }
 func hash(v string) string { x := sha256.Sum256([]byte(v)); return hex.EncodeToString(x[:]) }
@@ -349,7 +352,7 @@ func (s *Server) dashboardList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "sign in required", http.StatusUnauthorized)
 		return
 	}
-	rows, err := s.db.Query(`SELECT id,hostname,kind,visibility,expires_at,created_at FROM shares ORDER BY created_at DESC`)
+	rows, err := s.db.Query(`SELECT id,hostname,kind,format,visibility,expires_at,created_at FROM shares ORDER BY created_at DESC`)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -357,10 +360,10 @@ func (s *Server) dashboardList(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	out := []map[string]any{}
 	for rows.Next() {
-		var id, host, kind, visibility string
+		var id, host, kind, format, visibility string
 		var expires sql.NullTime
 		var created time.Time
-		_ = rows.Scan(&id, &host, &kind, &visibility, &expires, &created)
+		_ = rows.Scan(&id, &host, &kind, &format, &visibility, &expires, &created)
 		var expiresAt any
 		if expires.Valid {
 			expiresAt = expires.Time
@@ -369,7 +372,11 @@ func (s *Server) dashboardList(w http.ResponseWriter, r *http.Request) {
 		if kind == "tunnel" {
 			_, online = s.tunnels.Load(id)
 		}
-		out = append(out, map[string]any{"id": id, "url": "https://" + host, "kind": kind, "visibility": visibility, "online": online, "expiresAt": expiresAt, "createdAt": created})
+		displayType := format
+		if kind == "tunnel" {
+			displayType = "proxy"
+		}
+		out = append(out, map[string]any{"id": id, "url": "https://" + host, "kind": kind, "type": displayType, "visibility": visibility, "online": online, "expiresAt": expiresAt, "createdAt": created})
 	}
 	writeJSON(w, 200, out)
 }
@@ -614,6 +621,10 @@ func (s *Server) upload(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 	defer f.Close()
+	format := r.FormValue("format")
+	if format != "markdown" {
+		format = "html"
+	}
 	tmp := filepath.Join(s.cfg.DataDir, "sites", "."+id+"-"+randomText(6))
 	if e = extractTarGz(f, tmp); e != nil {
 		os.RemoveAll(tmp)
@@ -630,6 +641,7 @@ func (s *Server) upload(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 	_ = os.RemoveAll(old)
+	_, _ = s.db.Exec(`UPDATE shares SET format=? WHERE id=?`, format, id)
 	writeJSON(w, 200, map[string]string{"id": id, "url": "https://" + x.Hostname})
 }
 func extractTarGz(src io.Reader, dest string) error {
@@ -1016,6 +1028,7 @@ func publish() {
 	pr, pw := io.Pipe()
 	mw := multipart.NewWriter(pw)
 	go func() {
+		_ = mw.WriteField("format", publishFormat(fs.Arg(0)))
 		part, e := mw.CreateFormFile("content", "site.tar.gz")
 		if e == nil {
 			e = pack(fs.Arg(0), part)
@@ -1037,6 +1050,17 @@ func publish() {
 	}
 	fmt.Println(out["url"])
 	fmt.Printf("%s · %s\n", map[bool]string{true: "public", false: "private"}[*pub], map[bool]string{true: "no expiration", false: "temporary"}[*keep])
+}
+
+func publishFormat(path string) string {
+	info, err := os.Stat(path)
+	if err == nil && !info.IsDir() {
+		ext := strings.ToLower(filepath.Ext(path))
+		if ext == ".md" || ext == ".markdown" {
+			return "markdown"
+		}
+	}
+	return "html"
 }
 func pack(path string, w io.Writer) error {
 	gz := gzip.NewWriter(w)

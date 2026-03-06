@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -22,6 +23,18 @@ func TestClientConfigRoundTrip(t *testing.T) {
 	}
 	if got != want {
 		t.Fatalf("got %#v, want %#v", got, want)
+	}
+}
+
+func TestDashboardAssets(t *testing.T) {
+	server := &Server{cfg: Config{DisableViewerAuth: true, PublicURL: "http://localhost:8080"}}
+	for _, path := range []string{"/", "/style.css", "/rows.css", "/form.css", "/app.js"} {
+		request := httptest.NewRequest("GET", path, nil)
+		response := httptest.NewRecorder()
+		server.control(response, request)
+		if response.Code != 200 {
+			t.Errorf("%s returned %d", path, response.Code)
+		}
 	}
 }
 

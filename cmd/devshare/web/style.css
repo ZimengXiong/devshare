@@ -1,0 +1,55 @@
+@import "rows.css";
+@import "form.css";
+
+:root {
+  color-scheme: dark;
+  font: 15px/1.5 system-ui, sans-serif;
+  background: #2c1925;
+  color: #f7edf3;
+  --corner-radius: 6px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 980px;
+  margin: 10vh auto;
+  padding: 0 24px;
+}
+
+header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 60px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 72px;
+  line-height: 1;
+  letter-spacing: -.06em;
+}
+
+h2 { font-size: 18px; }
+p, small, .muted { color: #bfaeb8; }
+button, input { font: inherit; }
+
+button {
+  padding: 9px 13px;
+  border: 0;
+  border-radius: var(--corner-radius);
+  cursor: pointer;
+}
+
+nav button { background: none; color: #bfaeb8; }
+nav .selected { background: #ffc6df; color: #2c1925; }
+section { display: none; }
+section.selected { display: block; }
+#share-list, #key-list { border-top: 1px solid #5a4050; }

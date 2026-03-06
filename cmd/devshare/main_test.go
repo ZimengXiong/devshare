@@ -9,7 +9,15 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
+
+func TestDurationEnv(t *testing.T) {
+	t.Setenv("DEVSHARE_TEST_TTL", "15m")
+	if got := durationEnv("DEVSHARE_TEST_TTL", "1h"); got != 15*time.Minute {
+		t.Fatalf("got %s", got)
+	}
+}
 
 func TestClientConfigRoundTrip(t *testing.T) {
 	want := clientConfig{URL: "https://share.example.com", Token: "ds_secret"}

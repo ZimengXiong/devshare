@@ -35,5 +35,8 @@ func durationEnv(k, d string) time.Duration {
 	if e != nil {
 		log.Fatalf("%s: %v", k, e)
 	}
+	if v <= 0 {
+		log.Fatalf("%s must be positive", k)
+	}
 	return v
 }

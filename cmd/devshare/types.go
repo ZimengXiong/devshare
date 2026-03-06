@@ -34,3 +34,7 @@ type Share struct {
 	ExpiresAt                                                          sql.NullTime
 	CreatedAt                                                          time.Time
 }
+
+func expired(at sql.NullTime, now time.Time) bool {
+	return at.Valid && !at.Time.After(now)
+}

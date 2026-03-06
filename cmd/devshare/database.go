@@ -52,12 +52,16 @@ func (s *Server) janitor() {
 	t := time.NewTicker(time.Hour)
 	defer t.Stop()
 	for range t.C {
-		rows, _ := s.db.Query(`SELECT id FROM shares WHERE expires_at IS NOT NULL AND expires_at<=?`, time.Now().UTC())
+		now := time.Now().UTC()
+		rows, _ := s.db.Query(`SELECT id, expires_at FROM shares WHERE expires_at IS NOT NULL`, )
 		var ids []string
 		for rows != nil && rows.Next() {
 			var id string
-			_ = rows.Scan(&id)
-			ids = append(ids, id)
+			var expires sql.NullTime
+			_ = rows.Scan(&id, &expires)
+			if expired(expires, now) {
+				ids = append(ids, id)
+			}
 		}
 		if rows != nil {
 			rows.Close()

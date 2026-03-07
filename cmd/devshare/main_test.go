@@ -34,6 +34,14 @@ func TestClientConfigRoundTrip(t *testing.T) {
 	}
 }
 
+func TestBearerToken(t *testing.T) {
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", "bearer  ds_test")
+	if got := bearer(r); got != "ds_test" {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestDashboardAssets(t *testing.T) {
 	server := &Server{cfg: Config{DisableViewerAuth: true, PublicURL: "http://localhost:8080"}}
 	for _, path := range []string{"/", "/style.css", "/rows.css", "/form.css", "/app.js"} {

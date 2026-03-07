@@ -30,8 +30,8 @@ func (s *Server) ensureBootstrap(tok string) error {
 
 func bearer(r *http.Request) string {
 	h := r.Header.Get("Authorization")
-	if strings.HasPrefix(h, "Bearer ") {
-		return strings.TrimSpace(strings.TrimPrefix(h, "Bearer "))
+	if len(h) >= 7 && strings.EqualFold(h[:7], "Bearer ") {
+		return strings.TrimSpace(h[7:])
 	}
 	return ""
 }

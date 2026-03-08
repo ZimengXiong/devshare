@@ -19,6 +19,12 @@ func TestDurationEnv(t *testing.T) {
 	}
 }
 
+func TestNormalizeURL(t *testing.T) {
+	if got := normalizeURL(" https://example.test/// "); got != "https://example.test" {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestClientConfigRoundTrip(t *testing.T) {
 	want := clientConfig{URL: "https://share.example.com", Token: "ds_secret"}
 	b, err := json.Marshal(want)

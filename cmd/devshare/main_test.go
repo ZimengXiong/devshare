@@ -42,6 +42,13 @@ func TestBearerToken(t *testing.T) {
 	}
 }
 
+func TestShareURLUsesConfiguredScheme(t *testing.T) {
+	s := &Server{cfg: Config{PublicURL: "https://share.example.com"}}
+	if got := s.shareURL("quiet-lake.localhost"); got != "https://quiet-lake.localhost" {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestDashboardAssets(t *testing.T) {
 	server := &Server{cfg: Config{DisableViewerAuth: true, PublicURL: "http://localhost:8080"}}
 	for _, path := range []string{"/", "/style.css", "/rows.css", "/form.css", "/app.js"} {

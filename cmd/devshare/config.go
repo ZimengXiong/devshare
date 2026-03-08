@@ -17,7 +17,7 @@ func env(k, d string) string {
 func loadConfig() Config {
 	return Config{
 		Listen:            env("DEVSHARE_LISTEN", ":8080"),
-		PublicURL:         strings.TrimRight(env("DEVSHARE_PUBLIC_URL", "http://localhost:8080"), "/"),
+		PublicURL:         normalizeURL(env("DEVSHARE_PUBLIC_URL", "http://localhost:8080")),
 		SiteDomain:        env("DEVSHARE_SITE_DOMAIN", "localhost"),
 		DataDir:           env("DEVSHARE_DATA_DIR", "./data"),
 		BootstrapToken:    os.Getenv("DEVSHARE_BOOTSTRAP_TOKEN"),
@@ -28,6 +28,10 @@ func loadConfig() Config {
 		OIDCClientSecret:  os.Getenv("DEVSHARE_OIDC_CLIENT_SECRET"),
 		DisableViewerAuth: os.Getenv("DEVSHARE_DISABLE_VIEWER_AUTH") == "true",
 	}
+}
+
+func normalizeURL(v string) string {
+	return strings.TrimRight(strings.TrimSpace(v), "/")
 }
 
 func durationEnv(k, d string) time.Duration {

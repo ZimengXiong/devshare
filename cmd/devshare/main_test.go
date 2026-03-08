@@ -49,6 +49,12 @@ func TestShareURLUsesConfiguredScheme(t *testing.T) {
 	}
 }
 
+func TestHostOnlyNormalizesTrailingDot(t *testing.T) {
+	if got := hostOnly("SHARE.EXAMPLE."); got != "share.example" {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestDashboardAssets(t *testing.T) {
 	server := &Server{cfg: Config{DisableViewerAuth: true, PublicURL: "http://localhost:8080"}}
 	for _, path := range []string{"/", "/style.css", "/rows.css", "/form.css", "/app.js"} {

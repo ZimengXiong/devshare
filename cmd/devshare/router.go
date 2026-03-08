@@ -13,7 +13,10 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-func hostOnly(h string) string { h = strings.ToLower(strings.Split(h, ":")[0]); return h }
+func hostOnly(h string) string {
+	h = strings.ToLower(strings.Split(h, ":")[0])
+	return strings.TrimSuffix(h, ".")
+}
 
 func (s *Server) shareURL(host string) string {
 	control, err := url.Parse(s.cfg.PublicURL)

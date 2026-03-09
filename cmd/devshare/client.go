@@ -35,7 +35,7 @@ func client() clientConfig {
 			c.Token = f.Token
 		}
 	}
-	c.URL = strings.TrimRight(c.URL, "/")
+	c.URL = normalizeURL(c.URL)
 	if c.URL == "" || c.Token == "" {
 		log.Fatal("authenticate with `devshare auth login --url ... --token ...` or set DEVSHARE_URL and DEVSHARE_TOKEN")
 	}
@@ -55,7 +55,7 @@ func auth() {
 	}
 	p := configPath()
 	_ = os.MkdirAll(filepath.Dir(p), 0700)
-	b, _ := json.MarshalIndent(clientConfig{URL: strings.TrimRight(*u, "/"), Token: *t}, "", "  ")
+	b, _ := json.MarshalIndent(clientConfig{URL: normalizeURL(*u), Token: *t}, "", "  ")
 	if e := os.WriteFile(p, b, 0600); e != nil {
 		log.Fatal(e)
 	}

@@ -10,9 +10,7 @@ import (
 
 func listShares() {
 	c := client()
-	req, _ := http.NewRequest("GET", c.URL+"/v1/shares", nil)
-	req.Header.Set("Authorization", "Bearer "+c.Token)
-	resp, e := http.DefaultClient.Do(req)
+	resp, e := apiRequest(c, "GET", "/v1/shares", nil)
 	if e != nil {
 		log.Fatal(e)
 	}
@@ -32,9 +30,7 @@ func removeShare() {
 		log.Fatal("usage: devshare rm <share-id>")
 	}
 	c := client()
-	req, _ := http.NewRequest("DELETE", c.URL+"/v1/shares/"+os.Args[2], nil)
-	req.Header.Set("Authorization", "Bearer "+c.Token)
-	resp, e := http.DefaultClient.Do(req)
+	resp, e := apiRequest(c, "DELETE", "/v1/shares/"+os.Args[2], nil)
 	if e != nil {
 		log.Fatal(e)
 	}

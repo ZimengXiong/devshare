@@ -4,10 +4,21 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 )
+
+func apiRequest(c clientConfig, method, path string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest(method, c.URL+path, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.Token)
+	return http.DefaultClient.Do(req)
+}
 
 type clientConfig struct {
 	URL   string `json:"url"`

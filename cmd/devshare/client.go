@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func apiRequest(c clientConfig, method, path string, body io.Reader) (*http.Response, error) {

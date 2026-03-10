@@ -14,8 +14,8 @@ func listShares() {
 		log.Fatal(e)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode >= 300 {
-		log.Fatal(resp.Status)
+	if err := responseError(resp); err != nil {
+		log.Fatal(err)
 	}
 	var rows []shareResponse
 	_ = json.NewDecoder(resp.Body).Decode(&rows)
@@ -34,8 +34,8 @@ func removeShare() {
 		log.Fatal(e)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode >= 300 {
-		log.Fatal(resp.Status)
+	if err := responseError(resp); err != nil {
+		log.Fatal(err)
 	}
 	fmt.Println("removed", os.Args[2])
 }

@@ -20,6 +20,14 @@ func apiRequest(c clientConfig, method, path string, body io.Reader) (*http.Resp
 	return http.DefaultClient.Do(req)
 }
 
+func responseError(resp *http.Response) error {
+	if resp.StatusCode < 300 {
+		return nil
+	}
+	b, _ := io.ReadAll(resp.Body)
+	return fmt.Errorf("request failed: %s: %s", resp.Status, strings.TrimSpace(string(b)))
+}
+
 type clientConfig struct {
 	URL   string `json:"url"`
 	Token string `json:"token"`

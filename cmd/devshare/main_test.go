@@ -93,6 +93,18 @@ func TestExtractRejectsTraversal(t *testing.T) {
 	}
 }
 
+func TestPackRejectsUnsupportedFile(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "notes.txt")
+	if err := os.WriteFile(path, []byte("nope"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var archive bytes.Buffer
+	if err := pack(path, &archive); err == nil {
+		t.Fatal("expected unsupported file error")
+	}
+}
+
 func TestPackMarkdownAsGitHubFlavoredHTML(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "README.md")

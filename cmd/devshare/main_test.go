@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -102,6 +103,15 @@ func TestPackRejectsUnsupportedFile(t *testing.T) {
 	var archive bytes.Buffer
 	if err := pack(path, &archive); err == nil {
 		t.Fatal("expected unsupported file error")
+	}
+}
+
+func TestResponseErrorIncludesBody(t *testing.T) {
+	r := httptest.NewRecorder()
+	r.WriteHeader(400)
+	_, _ = r.WriteString("bad request")
+	if err := responseError(r.Result()); err == nil || !strings.Contains(err.Error(), "bad request") {
+		t.Fatalf("got %v", err)
 	}
 }
 

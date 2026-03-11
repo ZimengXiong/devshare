@@ -140,3 +140,9 @@ func TestPackMarkdownAsGitHubFlavoredHTML(t *testing.T) {
 		}
 	}
 }
+
+func TestMarkdownTitleFallsBackToFilename(t *testing.T) {
+	if got := markdownTitle("/tmp/notes.md", []byte("body\n")); got != "notes" {
+		t.Fatalf("got %q", got)
+	}
+}

@@ -146,3 +146,12 @@ func TestMarkdownTitleFallsBackToFilename(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestPublishFormat(t *testing.T) {
+	if got := publishFormat("site.md"); got != "markdown" {
+		t.Fatalf("got %q", got)
+	}
+	if got := publishFormat("site.html"); got != "html" {
+		t.Fatalf("got %q", got)
+	}
+}

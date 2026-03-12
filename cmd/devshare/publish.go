@@ -57,7 +57,10 @@ func publish() {
 
 func publishFormat(path string) string {
 	info, err := os.Stat(path)
-	if err == nil && !info.IsDir() {
+	if err != nil || info.IsDir() {
+		return "html"
+	}
+	if !info.IsDir() {
 		ext := strings.ToLower(filepath.Ext(path))
 		if ext == ".md" || ext == ".markdown" {
 			return "markdown"

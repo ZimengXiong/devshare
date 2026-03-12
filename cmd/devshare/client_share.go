@@ -26,10 +26,9 @@ func createRemote(c clientConfig, kind string, public, keep bool, ttl string) sh
 		Kind, Visibility, TTL string
 		Keep                  bool
 	}{kind, visibility, ttl, keep})
-	req, _ := http.NewRequest("POST", c.URL+"/v1/shares", strings.NewReader(string(body)))
-	req.Header.Set("Authorization", "Bearer "+c.Token)
+	req, _ := apiRequest(c, "POST", "/v1/shares", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
-	resp, e := http.DefaultClient.Do(req)
+	resp, e := req, error(nil)
 	if e != nil {
 		log.Fatal(e)
 	}

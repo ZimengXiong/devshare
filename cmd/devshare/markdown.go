@@ -33,10 +33,7 @@ func packMarkdown(tw *tar.Writer, path string) error {
 	if err != nil {
 		return err
 	}
-	title := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-	if lines := strings.Split(string(source), "\n"); len(lines) > 0 && strings.HasPrefix(lines[0], "# ") {
-		title = strings.TrimSpace(strings.TrimPrefix(lines[0], "# "))
-	}
+	title := markdownTitle(path, source)
 	page := fmt.Sprintf(`<!doctype html>
 <html lang="en">
 <head>
@@ -58,4 +55,12 @@ func packMarkdown(tw *tar.Writer, path string) error {
 	}
 	_, err = io.WriteString(tw, page)
 	return err
+}
+
+func markdownTitle(path string, source []byte) string {
+	title := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	if lines := strings.Split(string(source), "\n"); len(lines) > 0 && strings.HasPrefix(lines[0], "# ") {
+		title = strings.TrimSpace(strings.TrimPrefix(lines[0], "# "))
+	}
+	return title
 }

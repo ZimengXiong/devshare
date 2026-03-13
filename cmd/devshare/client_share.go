@@ -5,6 +5,7 @@ import (
 	"flag"
 	"io"
 	"log"
+	"net/http"
 	"strings"
 )
 
@@ -25,10 +26,10 @@ func createRemote(c clientConfig, kind string, public, keep bool, ttl string) sh
 		Kind, Visibility, TTL string
 		Keep                  bool
 	}{kind, visibility, ttl, keep})
-	resp, e := apiRequest(c, "POST", "/v1/shares", strings.NewReader(string(body)))
-	if e == nil {
-		resp.Header.Set("Content-Type", "application/json")
-	}
+	req, _ := http.NewRequest("POST", c.URL+"/v1/shares", strings.NewReader(string(body)))
+	req.Header.Set("Authorization", "Bearer "+c.Token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, e := http.DefaultClient.Do(req)
 	if e != nil {
 		log.Fatal(e)
 	}

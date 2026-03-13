@@ -26,9 +26,10 @@ func createRemote(c clientConfig, kind string, public, keep bool, ttl string) sh
 		Kind, Visibility, TTL string
 		Keep                  bool
 	}{kind, visibility, ttl, keep})
-	req, _ := apiRequest(c, "POST", "/v1/shares", strings.NewReader(string(body)))
-	req.Header.Set("Content-Type", "application/json")
-	resp, e := req, error(nil)
+	resp, e := apiRequest(c, "POST", "/v1/shares", strings.NewReader(string(body)))
+	if e == nil {
+		resp.Header.Set("Content-Type", "application/json")
+	}
 	if e != nil {
 		log.Fatal(e)
 	}

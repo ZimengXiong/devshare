@@ -5,7 +5,6 @@ import (
 	"flag"
 	"io"
 	"log"
-	"net/http"
 	"strings"
 )
 

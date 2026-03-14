@@ -26,6 +26,12 @@ func TestNormalizeURL(t *testing.T) {
 	}
 }
 
+func TestRandomTextLength(t *testing.T) {
+	if got := randomText(32); len(got) != 32 {
+		t.Fatalf("got length %d", len(got))
+	}
+}
+
 func TestClientConfigRoundTrip(t *testing.T) {
 	want := clientConfig{URL: "https://share.example.com", Token: "ds_secret"}
 	b, err := json.Marshal(want)

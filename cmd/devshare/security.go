@@ -6,8 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"github.com/coreos/go-oidc/v3/oidc"
-	"net/http"
 	"math/big"
+	"net/http"
 	"strings"
 	"time"
 )

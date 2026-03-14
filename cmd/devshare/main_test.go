@@ -32,6 +32,15 @@ func TestRandomTextLength(t *testing.T) {
 	}
 }
 
+func TestHashIsStable(t *testing.T) {
+	if hash("secret") != hash("secret") {
+		t.Fatal("hash changed between calls")
+	}
+	if hash("secret") == hash("other") {
+		t.Fatal("different values shared a hash")
+	}
+}
+
 func TestClientConfigRoundTrip(t *testing.T) {
 	want := clientConfig{URL: "https://share.example.com", Token: "ds_secret"}
 	b, err := json.Marshal(want)

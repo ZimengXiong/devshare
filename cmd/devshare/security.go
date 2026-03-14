@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"net/http"
+	"math/big"
 	"strings"
 	"time"
 )
@@ -57,12 +58,13 @@ func (s *Server) authorize(r *http.Request, scope string) (string, bool) {
 func randomText(n int) string {
 	const a = "23456789abcdefghjkmnpqrstuvwxyz"
 	b := make([]byte, n)
-	x := make([]byte, n)
-	if _, err := rand.Read(x); err != nil {
-		panic(err)
-	}
+	max := big.NewInt(int64(len(a)))
 	for i := range b {
-		b[i] = a[int(x[i])%len(a)]
+		x, err := rand.Int(rand.Reader, max)
+		if err != nil {
+			panic(err)
+		}
+		b[i] = a[x.Int64()]
 	}
 	return string(b)
 }

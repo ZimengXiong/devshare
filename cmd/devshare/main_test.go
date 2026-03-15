@@ -41,6 +41,16 @@ func TestHashIsStable(t *testing.T) {
 	}
 }
 
+func TestParseShareFlags(t *testing.T) {
+	fs, public, keep, ttl := parseShareFlags("test", nil)
+	if err := fs.Parse([]string{"--public", "--keep", "--ttl", "2h"}); err != nil {
+		t.Fatal(err)
+	}
+	if !*public || !*keep || *ttl != "2h" {
+		t.Fatalf("got public=%v keep=%v ttl=%q", *public, *keep, *ttl)
+	}
+}
+
 func TestClientConfigRoundTrip(t *testing.T) {
 	want := clientConfig{URL: "https://share.example.com", Token: "ds_secret"}
 	b, err := json.Marshal(want)

@@ -89,6 +89,13 @@ func TestShareURLUsesConfiguredScheme(t *testing.T) {
 	}
 }
 
+func TestShareURLFallsBackToHTTPS(t *testing.T) {
+	s := &Server{cfg: Config{PublicURL: "://bad"}}
+	if got := s.shareURL("quiet-lake.localhost"); got != "https://quiet-lake.localhost" {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestHostOnlyNormalizesTrailingDot(t *testing.T) {
 	if got := hostOnly("SHARE.EXAMPLE."); got != "share.example" {
 		t.Fatalf("got %q", got)

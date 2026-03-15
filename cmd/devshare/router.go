@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,8 +15,12 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func hostOnly(h string) string {
-	h = strings.ToLower(strings.Split(h, ":")[0])
-	return strings.TrimSuffix(h, ".")
+	if host, _, err := net.SplitHostPort(h); err == nil {
+		h = host
+	} else {
+		h = strings.Trim(h, "[]")
+	}
+	return strings.TrimSuffix(strings.ToLower(h), ".")
 }
 
 func (s *Server) shareURL(host string) string {

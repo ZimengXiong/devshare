@@ -51,6 +51,14 @@ func TestParseShareFlags(t *testing.T) {
 	}
 }
 
+func TestWriteJSONSetsContentType(t *testing.T) {
+	w := httptest.NewRecorder()
+	writeJSON(w, 201, map[string]string{"ok": "yes"})
+	if w.Code != 201 || !strings.Contains(w.Header().Get("Content-Type"), "application/json") {
+		t.Fatalf("status=%d type=%q", w.Code, w.Header().Get("Content-Type"))
+	}
+}
+
 func TestClientConfigRoundTrip(t *testing.T) {
 	want := clientConfig{URL: "https://share.example.com", Token: "ds_secret"}
 	b, err := json.Marshal(want)

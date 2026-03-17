@@ -26,6 +26,12 @@ func TestNormalizeURL(t *testing.T) {
 	}
 }
 
+func TestNormalizeURLEmpty(t *testing.T) {
+	if got := normalizeURL(" /// "); got != "" {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestRandomTextLength(t *testing.T) {
 	if got := randomText(32); len(got) != 32 {
 		t.Fatalf("got length %d", len(got))

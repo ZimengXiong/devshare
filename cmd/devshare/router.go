@@ -86,6 +86,8 @@ func (s *Server) control(w http.ResponseWriter, r *http.Request) {
 		s.list(w, r)
 	case p == "/v1/dashboard/shares" && r.Method == "GET":
 		s.dashboardList(w, r)
+	case p == "/v1/dashboard/visibility" && r.Method == "POST":
+		s.dashboardVisibility(w, r, "")
 	case strings.HasPrefix(p, "/v1/dashboard/shares/") && strings.HasSuffix(p, "/visibility") && r.Method == "PATCH":
 		s.dashboardVisibility(w, r, strings.TrimSuffix(strings.TrimPrefix(p, "/v1/dashboard/shares/"), "/visibility"))
 	case strings.HasPrefix(p, "/v1/dashboard/shares/") && r.Method == "DELETE":

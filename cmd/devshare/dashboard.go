@@ -9,19 +9,27 @@ import (
 	"path/filepath"
 )
 
-func (s *Server) dashboardVisibility(w http.ResponseWriter, r *http.Request, id string) {
+func (s *Server) dashboardVisibility(w http.ResponseWriter, r *http.Request, target string) {
 	if !s.viewerOK(r) {
 		http.Error(w, "sign in required", http.StatusUnauthorized)
 		return
 	}
 	var input struct {
 		Visibility string `json:"visibility"`
+		Share      string `json:"share"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil || (input.Visibility != "private" && input.Visibility != "public") {
 		http.Error(w, "visibility must be private or public", http.StatusBadRequest)
 		return
 	}
-	result, err := s.db.Exec(`UPDATE shares SET visibility=? WHERE id=? OR hostname=?`, input.Visibility, id, id)
+	if input.Share != "" {
+		target = input.Share
+	}
+	if target == "" {
+		http.Error(w, "share is required", http.StatusBadRequest)
+		return
+	}
+	result, err := s.db.Exec(`UPDATE shares SET visibility=? WHERE id=? OR hostname=?`, input.Visibility, target, target)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

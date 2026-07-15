@@ -77,3 +77,33 @@ fieldset input[type="checkbox"]:focus-visible {
   border-color: #ffc6df;
   box-shadow: 0 0 0 3px #ffc6df40;
 }
+
+.secret-card {
+  margin: 20px 0 34px;
+  padding: 16px;
+  border: 1px solid #5a4050;
+  border-radius: var(--corner-radius);
+  background: #35202e;
+}
+
+.secret-card p { margin: 0 0 12px; }
+.secret-value {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #ffc6df;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.secret-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.secret-actions button {
+  background: #ffc6df;
+  color: #2c1925;
+}
+.secret-actions .secondary {
+  border: 1px solid #8b7180;
+  background: transparent;
+  color: #f7edf3;
+}

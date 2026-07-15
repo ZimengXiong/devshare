@@ -1,0 +1,6 @@
+/data/
+/devshare
+/.env
+*.db
+*.db-shm
+*.db-wal

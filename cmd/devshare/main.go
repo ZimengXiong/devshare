@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-const version = "0.3.3"
+const version = "0.3.4"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -39,7 +39,8 @@ func usage() {
 	fmt.Print(`devshare — publish a page or share a local server
 
   devshare auth login --url https://share.example.com --token ds_...
-  devshare publish ./dist [--public] [--keep|--ttl 2h]
+  devshare publish [--public] [--keep|--ttl 2h] ./dist
+  devshare publish --update <share-id-or-url> ./dist
   devshare serve 5173 [--public] [--ttl 2h]
   devshare list
   devshare rm <share-id>

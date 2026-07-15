@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,13 +15,16 @@ import (
 
 func publish() {
 	fs, pub, keep, ttl := parseShareFlags("publish", os.Args[2:])
+	update := fs.String("update", "", "replace an existing share by ID or URL")
 	_ = fs.Parse(os.Args[2:])
 	if fs.NArg() != 1 {
-		log.Fatal("usage: devshare publish <file-or-directory> [--public] [--keep|--ttl 2h]")
+		log.Fatal("usage: devshare publish [--update <share-id-or-url>] [--public] [--keep|--ttl 2h] <file-or-directory>")
 	}
 	c := client()
-	out := createRemote(c, "static", *pub, *keep, *ttl)
-	id := out.ID
+	target := updateTarget(*update)
+	if target == "" {
+		target = createRemote(c, "static", *pub, *keep, *ttl).ID
+	}
 	pr, pw := io.Pipe()
 	mw := multipart.NewWriter(pw)
 	go func() {
@@ -31,7 +36,7 @@ func publish() {
 		_ = mw.Close()
 		_ = pw.CloseWithError(e)
 	}()
-	req, _ := http.NewRequest("PUT", c.URL+"/v1/shares/"+id+"/content", pr)
+	req, _ := http.NewRequest("PUT", c.URL+"/v1/shares/"+url.PathEscape(target)+"/content", pr)
 	req.Header.Set("Authorization", "Bearer "+c.Token)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 	resp, e := http.DefaultClient.Do(req)
@@ -43,7 +48,15 @@ func publish() {
 		b, _ := io.ReadAll(resp.Body)
 		log.Fatalf("upload: %s", b)
 	}
+	var out shareResponse
+	if e := json.NewDecoder(resp.Body).Decode(&out); e != nil {
+		log.Fatal(e)
+	}
 	fmt.Println(out.URL)
+	if *update != "" {
+		fmt.Println("updated")
+		return
+	}
 	expiration := "temporary"
 	if *keep {
 		expiration = "no expiration"
@@ -53,6 +66,18 @@ func publish() {
 		visibility = "public"
 	}
 	fmt.Printf("%s · %s\n", visibility, expiration)
+}
+
+func updateTarget(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	u, err := url.Parse(value)
+	if err == nil && u.Hostname() != "" {
+		return strings.ToLower(u.Hostname())
+	}
+	return value
 }
 
 func publishFormat(path string) string {

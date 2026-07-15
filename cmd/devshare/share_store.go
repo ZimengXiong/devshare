@@ -14,6 +14,12 @@ func (s *Server) getShare(id string) (Share, error) {
 	return x, err
 }
 
+func (s *Server) getShareTarget(target string) (Share, error) {
+	var x Share
+	err := s.db.QueryRow(`SELECT id,hostname,kind,visibility,owner_token_id,coalesce(tunnel_secret,''),expires_at,created_at FROM shares WHERE id=? OR hostname=?`, target, target).Scan(&x.ID, &x.Hostname, &x.Kind, &x.Visibility, &x.OwnerTokenID, &x.TunnelSecret, &x.ExpiresAt, &x.CreatedAt)
+	return x, err
+}
+
 func (s *Server) owned(r *http.Request, share Share, scope string) bool {
 	id, ok := s.authorize(r, scope)
 	if !ok {

@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Server) upload(w http.ResponseWriter, r *http.Request, id string) {
-	x, e := s.getShare(id)
+	x, e := s.getShareTarget(id)
 	if e != nil {
 		http.NotFound(w, r)
 		return
@@ -27,13 +27,13 @@ func (s *Server) upload(w http.ResponseWriter, r *http.Request, id string) {
 	if format != "markdown" {
 		format = "html"
 	}
-	tmp := filepath.Join(s.cfg.DataDir, "sites", "."+id+"-"+randomText(6))
+	tmp := filepath.Join(s.cfg.DataDir, "sites", "."+x.ID+"-"+randomText(6))
 	if e = extractTarGz(f, tmp); e != nil {
 		os.RemoveAll(tmp)
 		http.Error(w, e.Error(), 400)
 		return
 	}
-	dest := filepath.Join(s.cfg.DataDir, "sites", id)
+	dest := filepath.Join(s.cfg.DataDir, "sites", x.ID)
 	old := dest + ".old"
 	_ = os.RemoveAll(old)
 	_ = os.Rename(dest, old)
@@ -43,6 +43,6 @@ func (s *Server) upload(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 	_ = os.RemoveAll(old)
-	_, _ = s.db.Exec(`UPDATE shares SET format=? WHERE id=?`, format, id)
-	writeJSON(w, 200, map[string]string{"id": id, "url": s.shareURL(x.Hostname)})
+	_, _ = s.db.Exec(`UPDATE shares SET format=? WHERE id=?`, format, x.ID)
+	writeJSON(w, 200, map[string]string{"id": x.ID, "url": s.shareURL(x.Hostname)})
 }

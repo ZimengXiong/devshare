@@ -207,3 +207,12 @@ func TestPublishFormat(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestUpdateTarget(t *testing.T) {
+	if got := updateTarget("https://Quiet-Lake.Example.com/path"); got != "quiet-lake.example.com" {
+		t.Fatalf("got %q", got)
+	}
+	if got := updateTarget("share_123"); got != "share_123" {
+		t.Fatalf("got %q", got)
+	}
+}

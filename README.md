@@ -13,6 +13,9 @@ devshare publish ./dist
 # publish a markdown
 devshare publish README.md
 
+# replace it later without changing its URL
+devshare publish --update https://quiet-lake.example.com README.md
+
 # proxy a port
 devshare serve --public 5173
 ```

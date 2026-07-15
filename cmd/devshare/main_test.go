@@ -44,3 +44,29 @@ func TestExtractRejectsTraversal(t *testing.T) {
 		t.Fatal("archive escaped destination")
 	}
 }
+
+func TestPackMarkdownAsGitHubFlavoredHTML(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "README.md")
+	source := "# Demo\n\n- [x] shipped\n\n| a | b |\n|---|---|\n| 1 | 2 |\n"
+	if err := os.WriteFile(path, []byte(source), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var archive bytes.Buffer
+	if err := pack(path, &archive); err != nil {
+		t.Fatal(err)
+	}
+	dest := filepath.Join(root, "site")
+	if err := extractTarGz(bytes.NewReader(archive.Bytes()), dest); err != nil {
+		t.Fatal(err)
+	}
+	page, err := os.ReadFile(filepath.Join(dest, "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, expected := range []string{"<title>Demo</title>", "type=\"checkbox\"", "<table>", "markdown-body"} {
+		if !bytes.Contains(page, []byte(expected)) {
+			t.Fatalf("rendered page does not contain %q", expected)
+		}
+	}
+}

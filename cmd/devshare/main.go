@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/rand"
@@ -14,6 +15,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"mime/multipart"
@@ -36,6 +38,9 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/yamux"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
 	"golang.org/x/oauth2"
 	_ "modernc.org/sqlite"
 )
@@ -43,7 +48,7 @@ import (
 //go:embed web/*
 var web embed.FS
 
-const version = "0.1.0"
+const version = "0.2.0"
 
 type Config struct {
 	Listen, PublicURL, SiteDomain, DataDir, BootstrapToken string
@@ -870,10 +875,23 @@ func pack(path string, w io.Writer) error {
 	if e != nil {
 		return e
 	}
-	root := path
 	if !info.IsDir() {
-		root = filepath.Dir(path)
+		if strings.EqualFold(filepath.Ext(path), ".md") || strings.EqualFold(filepath.Ext(path), ".markdown") {
+			e = packMarkdown(tw, path)
+		} else if strings.EqualFold(filepath.Ext(path), ".html") || strings.EqualFold(filepath.Ext(path), ".htm") {
+			e = packFile(tw, path, "index.html", info)
+		} else {
+			e = errors.New("a single file must be HTML or Markdown")
+		}
+		if ce := tw.Close(); e == nil {
+			e = ce
+		}
+		if ce := gz.Close(); e == nil {
+			e = ce
+		}
+		return e
 	}
+	root := path
 	e = filepath.Walk(root, func(p string, i os.FileInfo, e error) error {
 		if e != nil {
 			return e
@@ -912,6 +930,55 @@ func pack(path string, w io.Writer) error {
 	}
 	return e
 }
+
+func packFile(tw *tar.Writer, path, name string, info os.FileInfo) error {
+	h, err := tar.FileInfoHeader(info, "")
+	if err != nil {
+		return err
+	}
+	h.Name = name
+	if err = tw.WriteHeader(h); err != nil {
+		return err
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = io.Copy(tw, f)
+	return err
+}
+
+func packMarkdown(tw *tar.Writer, path string) error {
+	source, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	markdown := goldmark.New(
+		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
+	)
+	var rendered bytes.Buffer
+	if err = markdown.Convert(source, &rendered); err != nil {
+		return err
+	}
+	title := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	if lines := strings.Split(string(source), "\n"); len(lines) > 0 && strings.HasPrefix(lines[0], "# ") {
+		title = strings.TrimSpace(strings.TrimPrefix(lines[0], "# "))
+	}
+	page := "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>" + template.HTMLEscapeString(title) + "</title><style>" + markdownCSS + "</style></head><body><main class=\"markdown-body\">" + rendered.String() + "</main></body></html>"
+	h := &tar.Header{Name: "index.html", Mode: 0644, Size: int64(len(page)), ModTime: time.Now()}
+	if err = tw.WriteHeader(h); err != nil {
+		return err
+	}
+	_, err = io.WriteString(tw, page)
+	return err
+}
+
+const markdownCSS = `
+:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;background:#fff;color:#1f2328;font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.markdown-body{max-width:920px;margin:0 auto;padding:48px 32px 80px;overflow-wrap:break-word}h1,h2,h3,h4,h5,h6{margin:24px 0 16px;line-height:1.25;font-weight:600}h1{font-size:2em}h2{font-size:1.5em}h1,h2{padding-bottom:.3em;border-bottom:1px solid #d1d9e0}p,blockquote,ul,ol,dl,table,pre,details{margin:0 0 16px}a{color:#0969da;text-decoration:none}a:hover{text-decoration:underline}blockquote{padding:0 1em;color:#59636e;border-left:.25em solid #d1d9e0}code{padding:.2em .4em;border-radius:6px;background:#818b981f;font:85% ui-monospace,SFMono-Regular,Consolas,monospace}pre{padding:16px;overflow:auto;border-radius:6px;background:#f6f8fa}pre code{padding:0;background:transparent;font-size:100%}table{display:block;width:max-content;max-width:100%;overflow:auto;border-spacing:0;border-collapse:collapse}th,td{padding:6px 13px;border:1px solid #d1d9e0}tr:nth-child(2n){background:#f6f8fa}img{max-width:100%}hr{height:.25em;padding:0;margin:24px 0;background:#d1d9e0;border:0}.task-list-item{list-style:none}.task-list-item input{margin:0 .4em .25em -1.4em;vertical-align:middle}@media(max-width:600px){.markdown-body{padding:28px 18px 60px}}@media(prefers-color-scheme:dark){body{background:#0d1117;color:#e6edf3}h1,h2,th,td{border-color:#30363d}a{color:#4493f8}blockquote{color:#9198a1;border-color:#3d444d}pre,tr:nth-child(2n){background:#151b23}code{background:#656c7633}hr{background:#30363d}}
+`
+
 func listShares() {
 	c := client()
 	req, _ := http.NewRequest("GET", c.URL+"/v1/shares", nil)

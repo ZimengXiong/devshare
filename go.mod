@@ -6,6 +6,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.15.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/yamux v0.1.2
+	github.com/yuin/goldmark v1.8.4
 	golang.org/x/oauth2 v0.30.0
 	modernc.org/sqlite v1.38.2
 )

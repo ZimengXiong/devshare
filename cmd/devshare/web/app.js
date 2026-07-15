@@ -28,7 +28,7 @@ async function load_shares() {
     <div class="row share-row">
       <span class="share-url">
         <a href="${escape_html(share.url)}">${escape_html(share.url.replace('https://', ''))}</a>
-        ${share.visibility === 'private' ? '<span class="private-lock" title="Private share" aria-label="Private share">🔒</span>' : ''}
+        <button class="visibility-toggle" data-visibility="${escape_html(share.visibility)}" data-share="${escape_html(share.id)}" title="${share.visibility === 'private' ? 'Private share — click to make public' : 'Public share — click to make private'}" aria-label="${share.visibility === 'private' ? 'Private share. Make public.' : 'Public share. Make private.'}">${share.visibility === 'private' ? '🔒' : '🔓'}</button>
       </span>
       <span class="share-type">${escape_html(share.type)}</span>
       ${share.expiresAt ? `<button class="date-toggle muted" data-date="${escape_html(share.expiresAt)}" data-relative="false" title="Click to show relative time" aria-label="Expiry: ${escape_html(absolute_date(share.expiresAt))}. Click to show relative time.">${escape_html(absolute_date(share.expiresAt))}</button>` : '<span class="date-toggle muted no-expiry">no expiry</span>'}
@@ -69,6 +69,22 @@ document.querySelector('#new-key').onsubmit = async event => {
 }
 
 document.body.onclick = async event => {
+  const visibility = event.target.closest('.visibility-toggle')
+  if (visibility) {
+    const next = visibility.dataset.visibility === 'private' ? 'public' : 'private'
+    const warning = next === 'public'
+      ? 'Make this share public? Anyone with the URL will be able to view it.'
+      : 'Make this share private? Viewers will need to sign in.'
+    if (!confirm(warning)) return
+    const response = await fetch(`/v1/dashboard/shares/${visibility.dataset.share}/visibility`, {
+      method: 'patch',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ visibility: next })
+    })
+    if (!response.ok) return alert(await response.text())
+    load_shares()
+    return
+  }
   const date = event.target.closest('.date-toggle')
   if (date) {
     const relative = date.dataset.relative !== 'true'

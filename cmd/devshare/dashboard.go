@@ -2,11 +2,37 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"github.com/hashicorp/yamux"
 	"net/http"
 	"os"
 	"path/filepath"
 )
+
+func (s *Server) dashboardVisibility(w http.ResponseWriter, r *http.Request, id string) {
+	if !s.viewerOK(r) {
+		http.Error(w, "sign in required", http.StatusUnauthorized)
+		return
+	}
+	var input struct {
+		Visibility string `json:"visibility"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil || (input.Visibility != "private" && input.Visibility != "public") {
+		http.Error(w, "visibility must be private or public", http.StatusBadRequest)
+		return
+	}
+	result, err := s.db.Exec(`UPDATE shares SET visibility=? WHERE id=?`, input.Visibility, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	count, _ := result.RowsAffected()
+	if count == 0 {
+		http.NotFound(w, r)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
 
 func (s *Server) dashboardList(w http.ResponseWriter, r *http.Request) {
 	if !s.viewerOK(r) {

@@ -55,22 +55,27 @@ func (s *Server) control(w http.ResponseWriter, r *http.Request) {
 		s.beginLogin(w, r, hostOnly(r.Host))
 	case p == "/" && r.Method == "GET":
 		b, _ := web.ReadFile("web/index.html")
+		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write(b)
 	case p == "/style.css" && r.Method == "GET":
 		b, _ := web.ReadFile("web/style.css")
+		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		_, _ = w.Write(b)
 	case p == "/rows.css" && r.Method == "GET":
 		b, _ := web.ReadFile("web/rows.css")
+		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		_, _ = w.Write(b)
 	case p == "/form.css" && r.Method == "GET":
 		b, _ := web.ReadFile("web/form.css")
+		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		_, _ = w.Write(b)
 	case p == "/app.js" && r.Method == "GET":
 		b, _ := web.ReadFile("web/app.js")
+		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
 		_, _ = w.Write(b)
 	case p == "/healthz":
@@ -81,6 +86,8 @@ func (s *Server) control(w http.ResponseWriter, r *http.Request) {
 		s.list(w, r)
 	case p == "/v1/dashboard/shares" && r.Method == "GET":
 		s.dashboardList(w, r)
+	case strings.HasPrefix(p, "/v1/dashboard/shares/") && strings.HasSuffix(p, "/visibility") && r.Method == "PATCH":
+		s.dashboardVisibility(w, r, strings.TrimSuffix(strings.TrimPrefix(p, "/v1/dashboard/shares/"), "/visibility"))
 	case strings.HasPrefix(p, "/v1/dashboard/shares/") && r.Method == "DELETE":
 		s.dashboardRemove(w, r, strings.TrimPrefix(p, "/v1/dashboard/shares/"))
 	case p == "/v1/dashboard/tokens" && r.Method == "GET":

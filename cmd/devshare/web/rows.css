@@ -26,10 +26,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.private-lock {
+.visibility-toggle {
   flex: none;
+  min-height: 0;
+  padding: 2px;
+  border: 0;
+  background: transparent;
   font-size: .9em;
   line-height: 1;
+}
+.visibility-toggle:hover,
+.visibility-toggle:focus-visible {
+  background: #41263680;
+  outline: none;
 }
 .share-type {
   align-self: center;

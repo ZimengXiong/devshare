@@ -123,6 +123,9 @@ func TestDashboardAssets(t *testing.T) {
 		if response.Code != 200 {
 			t.Errorf("%s returned %d", path, response.Code)
 		}
+		if response.Header().Get("Cache-Control") != "no-store" {
+			t.Errorf("%s did not disable caching", path)
+		}
 	}
 }
 

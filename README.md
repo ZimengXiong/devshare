@@ -1,14 +1,18 @@
 # devshare
 
-Put a webpage on the internet from any machine. Devshare is private and
-temporary by default. One statically linked binary is both the server and CLI.
+{you, agent} put {webpage, md, port} on internet from anywhere
+
+private and ephemeral by default
 
 ```sh
 devshare auth login --url https://share.example.com --token ds_...
+
+#then...
 devshare publish ./dist
+#or
 devshare publish --public --ttl 2h ./dist
+#or
 devshare serve --public 5173
-devshare list
 ```
 
 `publish` uploads a snapshot that survives after the CLI exits. `serve` opens

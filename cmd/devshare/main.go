@@ -49,7 +49,7 @@ import (
 //go:embed web/*
 var web embed.FS
 
-const version = "0.3.2"
+const version = "0.3.3"
 
 type Config struct {
 	Listen, PublicURL, SiteDomain, DataDir, BootstrapToken string
@@ -204,6 +204,9 @@ func runServer() {
 	if err = s.migrate(); err != nil {
 		log.Fatal(err)
 	}
+	if err = s.backfillFormats(); err != nil {
+		log.Fatal(err)
+	}
 	if cfg.BootstrapToken != "" {
 		if err = s.ensureBootstrap(cfg.BootstrapToken); err != nil {
 			log.Fatal(err)
@@ -255,6 +258,34 @@ CREATE TABLE IF NOT EXISTS handoffs(code_hash TEXT PRIMARY KEY, email TEXT NOT N
 		_, _ = s.db.Exec(`ALTER TABLE shares ADD COLUMN format TEXT NOT NULL DEFAULT 'html'`)
 	}
 	return e
+}
+
+func (s *Server) backfillFormats() error {
+	rows, err := s.db.Query(`SELECT id FROM shares WHERE kind='static' AND format='html'`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	var markdownIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return err
+		}
+		page, err := os.ReadFile(filepath.Join(s.cfg.DataDir, "sites", id, "index.html"))
+		if err == nil && bytes.Contains(page, []byte(`class="markdown-body"`)) {
+			markdownIDs = append(markdownIDs, id)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, id := range markdownIDs {
+		if _, err := s.db.Exec(`UPDATE shares SET format='markdown' WHERE id=?`, id); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 func hash(v string) string { x := sha256.Sum256([]byte(v)); return hex.EncodeToString(x[:]) }
 func (s *Server) ensureBootstrap(tok string) error {

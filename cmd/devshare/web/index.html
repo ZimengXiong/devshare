@@ -17,10 +17,7 @@
     .console { margin-top:4rem; padding-top:2rem; border-top:1px solid var(--line); }
     .console h2 { margin:0 0 .35rem; font-size:1rem; font-weight:600; }
     .console p { margin:.2rem 0 1rem; color:var(--muted); font-size:.9rem; }
-    form { display:flex; gap:.6rem; }
-    input,button { min-height:42px; border:1px solid var(--line); border-radius:7px; font:inherit; }
-    input { flex:1; min-width:0; padding:0 .8rem; color:var(--ink); background:rgba(255,255,255,.035); }
-    button { padding:0 1rem; color:var(--bg); background:var(--accent); cursor:pointer; font-weight:650; }
+    button,.button { display:inline-flex;align-items:center;min-height:42px;padding:0 1rem;border:1px solid var(--line);border-radius:7px;font:inherit;color:var(--bg);background:var(--accent);cursor:pointer;font-weight:650;text-decoration:none }
     button.ghost { color:var(--muted); background:transparent; }
     #shares { margin-top:1.4rem; }
     .share { display:grid; grid-template-columns:1fr auto; gap:.2rem 1rem; padding:.85rem 0; border-top:1px solid var(--line); }
@@ -35,28 +32,27 @@
   <h1>devshare</h1>
   <p class="lead">Put a webpage on the internet. Private by default, temporary by default, and one command from anywhere.</p>
   <pre><code>devshare publish ./dist</code></pre>
-  <div class="row"><span>Files or live ports</span><span>API-key authenticated</span><span>Isolated origins</span></div>
   <section class="console">
     <h2>Your shares</h2>
-    <p id="hint">Use the same API key as the CLI. It stays in this browser tab.</p>
-    <form id="login"><input id="token" type="password" placeholder="ds_…" autocomplete="off" aria-label="API key"><button>Connect</button></form>
+    <p id="hint">Sign in to see every active share.</p>
+    <a class="button" id="login" href="#">Sign in</a>
     <div id="shares" hidden></div>
   </section>
   <footer>Small infrastructure for unfinished things.</footer>
 </main>
 <script>
-  const form=document.querySelector('#login'), token=document.querySelector('#token'), shares=document.querySelector('#shares'), hint=document.querySelector('#hint');
-  let key=sessionStorage.devshareToken||'';
+  const login=document.querySelector('#login'), shares=document.querySelector('#shares'), hint=document.querySelector('#hint');
+  login.href='/auth/login?return='+encodeURIComponent(location.origin+'/');
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   async function load(){
-    const r=await fetch('/v1/shares',{headers:{Authorization:`Bearer ${key}`}});
-    if(!r.ok) throw new Error(r.status===401?'That key was not accepted.':'Could not load shares.');
-    const list=await r.json(); form.hidden=true; shares.hidden=false; hint.textContent=list.length?'Private by default. Temporary by default.':'No shares yet. Publish one from the CLI.';
+    const r=await fetch('/v1/dashboard/shares');
+    if(r.status===401)return;
+    if(!r.ok)throw new Error('Could not load shares.');
+    const list=await r.json(); login.hidden=true; shares.hidden=false; hint.textContent=list.length?'Private by default. Temporary by default.':'No shares yet. Publish one from the CLI.';
     shares.innerHTML=list.map(x=>`<div class="share"><a href="${esc(x.url)}">${esc(x.url.replace('https://',''))}</a><span class="meta">${esc(x.kind)} · ${esc(x.visibility)} · ${x.expiresAt?'expires '+new Date(x.expiresAt).toLocaleString():'kept'}</span><button class="ghost" data-id="${esc(x.id)}">Remove</button></div>`).join('');
   }
-  form.addEventListener('submit',async e=>{e.preventDefault();key=token.value.trim();try{await load();sessionStorage.devshareToken=key}catch(err){hint.textContent=err.message}});
-  shares.addEventListener('click',async e=>{const id=e.target.dataset.id;if(!id)return;if(!confirm('Remove this share?'))return;await fetch('/v1/shares/'+id,{method:'DELETE',headers:{Authorization:`Bearer ${key}`}});load()});
-  if(key) load().catch(()=>{sessionStorage.removeItem('devshareToken');key='' });
+  shares.addEventListener('click',async e=>{const id=e.target.dataset.id;if(!id)return;if(!confirm('Remove this share?'))return;await fetch('/v1/dashboard/shares/'+id,{method:'DELETE'});load()});
+  load().catch(err=>hint.textContent=err.message);
 </script>
 </body>
 </html>

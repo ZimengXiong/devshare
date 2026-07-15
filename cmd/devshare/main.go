@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto"
 	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
@@ -48,7 +49,7 @@ import (
 //go:embed web/*
 var web embed.FS
 
-const version = "0.2.0"
+const version = "0.2.1"
 
 type Config struct {
 	Listen, PublicURL, SiteDomain, DataDir, BootstrapToken string
@@ -63,6 +64,16 @@ type Server struct {
 	verifier *oidc.IDTokenVerifier
 	tunnels  sync.Map
 	upgrader websocket.Upgrader
+}
+
+type fallbackKeySet struct{ primary, fallback oidc.KeySet }
+
+func (k fallbackKeySet) VerifySignature(ctx context.Context, jwt string) ([]byte, error) {
+	payload, err := k.primary.VerifySignature(ctx, jwt)
+	if err == nil {
+		return payload, nil
+	}
+	return k.fallback.VerifySignature(ctx, jwt)
 }
 
 type Share struct {
@@ -203,7 +214,17 @@ func runServer() {
 		if e != nil {
 			log.Fatal(e)
 		}
-		s.verifier = p.Verifier(&oidc.Config{ClientID: cfg.OIDCClientID})
+		issuer := strings.TrimRight(cfg.OIDCIssuer, "/")
+		metadata, metadataErr := loadOIDCMetadata(issuer)
+		if metadataErr != nil {
+			e = metadataErr
+			log.Fatal(e)
+		}
+		keySet := fallbackKeySet{
+			primary:  oidc.NewRemoteKeySet(context.Background(), metadata.JWKS),
+			fallback: &oidc.StaticKeySet{PublicKeys: []crypto.PublicKey{[]byte(cfg.OIDCClientSecret)}},
+		}
+		s.verifier = oidc.NewVerifier(metadata.Issuer, keySet, &oidc.Config{ClientID: cfg.OIDCClientID, SupportedSigningAlgs: metadata.Algorithms})
 		s.oauth = &oauth2.Config{ClientID: cfg.OIDCClientID, ClientSecret: cfg.OIDCClientSecret, Endpoint: p.Endpoint(), RedirectURL: cfg.PublicURL + "/auth/callback", Scopes: []string{oidc.ScopeOpenID, "profile", "email"}}
 	}
 	mux := http.NewServeMux()
@@ -279,6 +300,10 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) control(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Path
+	control, _ := url.Parse(s.cfg.PublicURL)
+	if hostOnly(control.Host) == hostOnly(r.Host) && s.completeHandoff(w, r, hostOnly(r.Host)) {
+		return
+	}
 	switch {
 	case p == "/" && r.Method == "GET":
 		b, _ := web.ReadFile("web/index.html")
@@ -290,6 +315,10 @@ func (s *Server) control(w http.ResponseWriter, r *http.Request) {
 		s.createShare(w, r)
 	case p == "/v1/shares" && r.Method == "GET":
 		s.list(w, r)
+	case p == "/v1/dashboard/shares" && r.Method == "GET":
+		s.dashboardList(w, r)
+	case strings.HasPrefix(p, "/v1/dashboard/shares/") && r.Method == "DELETE":
+		s.dashboardRemove(w, r, strings.TrimPrefix(p, "/v1/dashboard/shares/"))
 	case p == "/v1/tokens" && r.Method == "POST":
 		s.createToken(w, r)
 	case strings.HasPrefix(p, "/v1/shares/") && strings.HasSuffix(p, "/content") && r.Method == "PUT":
@@ -305,6 +334,54 @@ func (s *Server) control(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+func (s *Server) dashboardList(w http.ResponseWriter, r *http.Request) {
+	if !s.viewerOK(r) {
+		http.Error(w, "sign in required", http.StatusUnauthorized)
+		return
+	}
+	rows, err := s.db.Query(`SELECT id,hostname,kind,visibility,expires_at,created_at FROM shares ORDER BY created_at DESC`)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	defer rows.Close()
+	out := []map[string]any{}
+	for rows.Next() {
+		var id, host, kind, visibility string
+		var expires sql.NullTime
+		var created time.Time
+		_ = rows.Scan(&id, &host, &kind, &visibility, &expires, &created)
+		var expiresAt any
+		if expires.Valid {
+			expiresAt = expires.Time
+		}
+		out = append(out, map[string]any{"id": id, "url": "https://" + host, "kind": kind, "visibility": visibility, "expiresAt": expiresAt, "createdAt": created})
+	}
+	writeJSON(w, 200, out)
+}
+
+func (s *Server) dashboardRemove(w http.ResponseWriter, r *http.Request, id string) {
+	if !s.viewerOK(r) {
+		http.Error(w, "sign in required", http.StatusUnauthorized)
+		return
+	}
+	result, err := s.db.Exec(`DELETE FROM shares WHERE id=?`, id)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	count, _ := result.RowsAffected()
+	if count == 0 {
+		http.NotFound(w, r)
+		return
+	}
+	_ = os.RemoveAll(filepath.Join(s.cfg.DataDir, "sites", id))
+	if value, ok := s.tunnels.LoadAndDelete(id); ok {
+		_ = value.(*yamux.Session).Close()
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) createToken(w http.ResponseWriter, r *http.Request) {
@@ -669,12 +746,14 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	}
 	tok, e := s.oauth.Exchange(r.Context(), r.URL.Query().Get("code"))
 	if e != nil {
+		log.Printf("OIDC code exchange failed: %v", e)
 		http.Error(w, "login failed", 401)
 		return
 	}
 	raw, _ := tok.Extra("id_token").(string)
 	idtok, e := s.verifier.Verify(r.Context(), raw)
 	if e != nil {
+		log.Printf("OIDC identity verification failed: %v", e)
 		http.Error(w, "invalid identity", 401)
 		return
 	}

@@ -21,7 +21,7 @@ func (s *Server) dashboardVisibility(w http.ResponseWriter, r *http.Request, id 
 		http.Error(w, "visibility must be private or public", http.StatusBadRequest)
 		return
 	}
-	result, err := s.db.Exec(`UPDATE shares SET visibility=? WHERE id=?`, input.Visibility, id)
+	result, err := s.db.Exec(`UPDATE shares SET visibility=? WHERE id=? OR hostname=?`, input.Visibility, id, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

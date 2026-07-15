@@ -32,7 +32,7 @@ async function load_shares() {
     <div class="row share-row">
       <span class="share-url">
         <a href="${escape_html(share.url)}">${escape_html(share.url.replace('https://', ''))}</a>
-        <button class="visibility-toggle" data-visibility="${escape_html(share.visibility)}" data-share="${escape_html(share.id)}" title="${share.visibility === 'private' ? 'Private share — click to make public' : 'Public share — click to make private'}" aria-label="${share.visibility === 'private' ? 'Private share. Make public.' : 'Public share. Make private.'}">${lock_glyph(share.visibility === 'private')}</button>
+        <button class="visibility-toggle" data-visibility="${escape_html(share.visibility)}" data-share="${escape_html(new URL(share.url).hostname)}" title="${share.visibility === 'private' ? 'Private share — click to make public' : 'Public share — click to make private'}" aria-label="${share.visibility === 'private' ? 'Private share. Make public.' : 'Public share. Make private.'}">${lock_glyph(share.visibility === 'private')}</button>
       </span>
       <span class="share-type">${escape_html(share.type)}</span>
       ${share.expiresAt ? `<button class="date-toggle muted" data-date="${escape_html(share.expiresAt)}" data-relative="false" title="Click to show relative time" aria-label="Expiry: ${escape_html(absolute_date(share.expiresAt))}. Click to show relative time.">${escape_html(absolute_date(share.expiresAt))}</button>` : '<span class="date-toggle muted no-expiry">no expiry</span>'}

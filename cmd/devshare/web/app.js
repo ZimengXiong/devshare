@@ -26,7 +26,10 @@ async function load_shares() {
   const shares = await response.json()
   document.querySelector('#share-list').innerHTML = shares.map(share => `
     <div class="row share-row">
-      <a href="${escape_html(share.url)}">${escape_html(share.url.replace('https://', ''))}</a>
+      <span class="share-url">
+        <a href="${escape_html(share.url)}">${escape_html(share.url.replace('https://', ''))}</a>
+        ${share.visibility === 'private' ? '<span class="private-lock" title="Private share" aria-label="Private share">🔒</span>' : ''}
+      </span>
       <span class="share-type">${escape_html(share.type)}</span>
       ${share.expiresAt ? `<button class="date-toggle muted" data-date="${escape_html(share.expiresAt)}" data-relative="false" title="Click to show relative time" aria-label="Expiry: ${escape_html(absolute_date(share.expiresAt))}. Click to show relative time.">${escape_html(absolute_date(share.expiresAt))}</button>` : '<span class="date-toggle muted no-expiry">no expiry</span>'}
       <button class="danger" data-remove="${escape_html(share.id)}">remove</button>

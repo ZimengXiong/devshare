@@ -4,6 +4,10 @@ const escape_html = value => String(value).replace(/[&<>"']/g, char => ({
 
 const absolute_date = value => new Date(value).toLocaleString()
 
+const lock_glyph = locked => locked
+  ? '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>'
+  : '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 5.7-1.3"/></svg>'
+
 function relative_date(value) {
   const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000)
   const units = [[31536000, 'year'], [2592000, 'month'], [86400, 'day'], [3600, 'hour'], [60, 'minute'], [1, 'second']]
@@ -28,7 +32,7 @@ async function load_shares() {
     <div class="row share-row">
       <span class="share-url">
         <a href="${escape_html(share.url)}">${escape_html(share.url.replace('https://', ''))}</a>
-        <button class="visibility-toggle" data-visibility="${escape_html(share.visibility)}" data-share="${escape_html(share.id)}" title="${share.visibility === 'private' ? 'Private share — click to make public' : 'Public share — click to make private'}" aria-label="${share.visibility === 'private' ? 'Private share. Make public.' : 'Public share. Make private.'}">${share.visibility === 'private' ? '🔒' : '🔓'}</button>
+        <button class="visibility-toggle" data-visibility="${escape_html(share.visibility)}" data-share="${escape_html(share.id)}" title="${share.visibility === 'private' ? 'Private share — click to make public' : 'Public share — click to make private'}" aria-label="${share.visibility === 'private' ? 'Private share. Make public.' : 'Public share. Make private.'}">${lock_glyph(share.visibility === 'private')}</button>
       </span>
       <span class="share-type">${escape_html(share.type)}</span>
       ${share.expiresAt ? `<button class="date-toggle muted" data-date="${escape_html(share.expiresAt)}" data-relative="false" title="Click to show relative time" aria-label="Expiry: ${escape_html(absolute_date(share.expiresAt))}. Click to show relative time.">${escape_html(absolute_date(share.expiresAt))}</button>` : '<span class="date-toggle muted no-expiry">no expiry</span>'}

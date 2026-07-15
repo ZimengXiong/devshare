@@ -28,12 +28,25 @@
 }
 .visibility-toggle {
   flex: none;
-  min-height: 0;
-  padding: 2px;
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  padding: 1px;
   border: 0;
+  border-radius: 3px;
   background: transparent;
-  font-size: .9em;
-  line-height: 1;
+  color: #bfaeb8;
+  line-height: 0;
+}
+.visibility-toggle svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .visibility-toggle:hover,
 .visibility-toggle:focus-visible {

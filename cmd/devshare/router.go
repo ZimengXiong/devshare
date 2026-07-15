@@ -84,6 +84,8 @@ func (s *Server) control(w http.ResponseWriter, r *http.Request) {
 		s.createShare(w, r)
 	case p == "/v1/shares" && r.Method == "GET":
 		s.list(w, r)
+	case p == "/v1/visibility" && r.Method == "POST":
+		s.setVisibility(w, r)
 	case p == "/v1/dashboard/shares" && r.Method == "GET":
 		s.dashboardList(w, r)
 	case p == "/v1/dashboard/visibility" && r.Method == "POST":

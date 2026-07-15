@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-const version = "0.3.10"
+const version = "0.3.11"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -23,6 +23,8 @@ func main() {
 		listShares()
 	case "remove", "rm":
 		removeShare()
+	case "visibility":
+		visibility()
 	case "auth":
 		auth()
 	case "token":
@@ -43,6 +45,7 @@ func usage() {
   devshare publish --update <share-id-or-url> ./dist
   devshare serve 5173 [--public] [--ttl 2h]
   devshare list
+  devshare visibility <share-id-or-url> <private|public>
   devshare rm <share-id>
   devshare server
 `)

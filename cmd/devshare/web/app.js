@@ -35,6 +35,7 @@ Do all of the following now:
    - devshare serve <port>
    - devshare serve --public <port>
    - devshare list
+   - devshare visibility <share-id-or-url> <private|public>
    - devshare rm <share-id>
    Explain that HTML files/directories and Markdown are supported; shares are private and temporary unless --public or --keep is supplied; --update preserves the URL; serve creates a live tunnel and must remain running.
 6. Report the CLI path, ~/.devshare/.env path, CLI config path, skill path, and successful verification. If any step fails, diagnose and finish the setup instead of merely describing it.

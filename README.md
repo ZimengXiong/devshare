@@ -16,6 +16,10 @@ devshare publish README.md
 # replace it later without changing its URL
 devshare publish --update https://quiet-lake.example.com README.md
 
+# change who can view it without changing its URL
+devshare visibility https://quiet-lake.example.com public
+devshare visibility https://quiet-lake.example.com private
+
 # proxy a port
 devshare serve --public 5173
 ```

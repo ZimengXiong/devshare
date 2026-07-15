@@ -49,7 +49,7 @@ import (
 //go:embed web/*
 var web embed.FS
 
-const version = "0.2.1"
+const version = "0.3.0"
 
 type Config struct {
 	Listen, PublicURL, SiteDomain, DataDir, BootstrapToken string
@@ -305,6 +305,8 @@ func (s *Server) control(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch {
+	case p == "/" && r.Method == "GET" && !s.viewerOK(r):
+		s.beginLogin(w, r, hostOnly(r.Host))
 	case p == "/" && r.Method == "GET":
 		b, _ := web.ReadFile("web/index.html")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -319,6 +321,12 @@ func (s *Server) control(w http.ResponseWriter, r *http.Request) {
 		s.dashboardList(w, r)
 	case strings.HasPrefix(p, "/v1/dashboard/shares/") && r.Method == "DELETE":
 		s.dashboardRemove(w, r, strings.TrimPrefix(p, "/v1/dashboard/shares/"))
+	case p == "/v1/dashboard/tokens" && r.Method == "GET":
+		s.dashboardTokens(w, r)
+	case p == "/v1/dashboard/tokens" && r.Method == "POST":
+		s.dashboardCreateToken(w, r)
+	case strings.HasPrefix(p, "/v1/dashboard/tokens/") && r.Method == "DELETE":
+		s.dashboardRevokeToken(w, r, strings.TrimPrefix(p, "/v1/dashboard/tokens/"))
 	case p == "/v1/tokens" && r.Method == "POST":
 		s.createToken(w, r)
 	case strings.HasPrefix(p, "/v1/shares/") && strings.HasSuffix(p, "/content") && r.Method == "PUT":
@@ -357,9 +365,92 @@ func (s *Server) dashboardList(w http.ResponseWriter, r *http.Request) {
 		if expires.Valid {
 			expiresAt = expires.Time
 		}
-		out = append(out, map[string]any{"id": id, "url": "https://" + host, "kind": kind, "visibility": visibility, "expiresAt": expiresAt, "createdAt": created})
+		online := kind != "tunnel"
+		if kind == "tunnel" {
+			_, online = s.tunnels.Load(id)
+		}
+		out = append(out, map[string]any{"id": id, "url": "https://" + host, "kind": kind, "visibility": visibility, "online": online, "expiresAt": expiresAt, "createdAt": created})
 	}
 	writeJSON(w, 200, out)
+}
+
+func (s *Server) dashboardTokens(w http.ResponseWriter, r *http.Request) {
+	if !s.viewerOK(r) {
+		http.Error(w, "sign in required", 401)
+		return
+	}
+	rows, err := s.db.Query(`SELECT id,label,scopes,created_at,revoked_at FROM tokens ORDER BY created_at DESC`)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	defer rows.Close()
+	out := []map[string]any{}
+	for rows.Next() {
+		var id, label, scopes string
+		var created time.Time
+		var revoked sql.NullTime
+		_ = rows.Scan(&id, &label, &scopes, &created, &revoked)
+		out = append(out, map[string]any{"id": id, "label": label, "scopes": strings.Split(scopes, ","), "createdAt": created, "revoked": revoked.Valid, "bootstrap": id == "tok_bootstrap"})
+	}
+	writeJSON(w, 200, out)
+}
+
+func validScopes(scopes []string) bool {
+	allowed := map[string]bool{"publish": true, "public": true, "keep": true, "tunnel": true, "list": true, "delete": true, "admin": true}
+	if len(scopes) == 0 {
+		return false
+	}
+	for _, scope := range scopes {
+		if !allowed[scope] {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *Server) dashboardCreateToken(w http.ResponseWriter, r *http.Request) {
+	if !s.viewerOK(r) {
+		http.Error(w, "sign in required", 401)
+		return
+	}
+	var q struct {
+		Label  string   `json:"label"`
+		Scopes []string `json:"scopes"`
+	}
+	if json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&q) != nil || strings.TrimSpace(q.Label) == "" || !validScopes(q.Scopes) {
+		http.Error(w, "label and valid scopes are required", 400)
+		return
+	}
+	token, id := "ds_"+randomText(40), "tok_"+randomText(12)
+	_, err := s.db.Exec(`INSERT INTO tokens(id,hash,label,scopes,created_at) VALUES(?,?,?,?,?)`, id, hash(token), strings.TrimSpace(q.Label), strings.Join(q.Scopes, ","), time.Now().UTC())
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	writeJSON(w, 201, map[string]any{"id": id, "token": token, "label": q.Label, "scopes": q.Scopes})
+}
+
+func (s *Server) dashboardRevokeToken(w http.ResponseWriter, r *http.Request, id string) {
+	if !s.viewerOK(r) {
+		http.Error(w, "sign in required", 401)
+		return
+	}
+	if id == "tok_bootstrap" {
+		http.Error(w, "bootstrap token cannot be revoked here", 403)
+		return
+	}
+	result, err := s.db.Exec(`UPDATE tokens SET revoked_at=? WHERE id=? AND revoked_at IS NULL`, time.Now().UTC(), id)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		http.NotFound(w, r)
+		return
+	}
+	w.WriteHeader(204)
 }
 
 func (s *Server) dashboardRemove(w http.ResponseWriter, r *http.Request, id string) {

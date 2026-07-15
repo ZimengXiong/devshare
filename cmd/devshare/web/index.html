@@ -1,58 +1,19 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Devshare</title>
-  <style>
-    :root { color-scheme: dark; --bg:#2C1925; --ink:#f7edf3; --muted:#c9b7c2; --line:#5b4051; --accent:#ffc6df; }
-    * { box-sizing:border-box }
-    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui,-apple-system,sans-serif; }
-    main { width:min(680px,calc(100% - 40px)); margin:14vh auto 8vh; }
-    h1 { margin:0 0 .35rem; font-size:clamp(2.5rem,8vw,5.5rem); line-height:.95; letter-spacing:-.065em; font-weight:650; }
-    .lead { color:var(--muted); max-width:510px; font-size:1.12rem; }
-    pre { margin:3rem 0 1.2rem; padding:1rem 1.1rem; border:1px solid var(--line); border-radius:9px; overflow:auto; background:rgba(255,255,255,.025); color:var(--accent); }
-    .row { display:flex; gap:1rem; flex-wrap:wrap; color:var(--muted); font-size:.9rem; }
-    a { color:var(--ink); text-underline-offset:3px; }
-    .console { margin-top:4rem; padding-top:2rem; border-top:1px solid var(--line); }
-    .console h2 { margin:0 0 .35rem; font-size:1rem; font-weight:600; }
-    .console p { margin:.2rem 0 1rem; color:var(--muted); font-size:.9rem; }
-    button,.button { display:inline-flex;align-items:center;min-height:42px;padding:0 1rem;border:1px solid var(--line);border-radius:7px;font:inherit;color:var(--bg);background:var(--accent);cursor:pointer;font-weight:650;text-decoration:none }
-    button.ghost { color:var(--muted); background:transparent; }
-    #shares { margin-top:1.4rem; }
-    .share { display:grid; grid-template-columns:1fr auto; gap:.2rem 1rem; padding:.85rem 0; border-top:1px solid var(--line); }
-    .share a { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .meta { color:var(--muted); font-size:.78rem; }
-    .share button { grid-row:1 / span 2; grid-column:2; min-height:32px; padding:0 .65rem; font-size:.78rem; }
-    [hidden] { display:none !important; }
-    footer { margin-top:5rem; padding-top:1rem; border-top:1px solid var(--line); color:var(--muted); font-size:.85rem; }
-  </style>
-</head>
-<body><main>
-  <h1>devshare</h1>
-  <p class="lead">Put a webpage on the internet. Private by default, temporary by default, and one command from anywhere.</p>
-  <pre><code>devshare publish ./dist</code></pre>
-  <section class="console">
-    <h2>Your shares</h2>
-    <p id="hint">Sign in to see every active share.</p>
-    <a class="button" id="login" href="#">Sign in</a>
-    <div id="shares" hidden></div>
-  </section>
-  <footer>Small infrastructure for unfinished things.</footer>
-</main>
-<script>
-  const login=document.querySelector('#login'), shares=document.querySelector('#shares'), hint=document.querySelector('#hint');
-  login.href='/auth/login?return='+encodeURIComponent(location.origin+'/');
-  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  async function load(){
-    const r=await fetch('/v1/dashboard/shares');
-    if(r.status===401)return;
-    if(!r.ok)throw new Error('Could not load shares.');
-    const list=await r.json(); login.hidden=true; shares.hidden=false; hint.textContent=list.length?'Private by default. Temporary by default.':'No shares yet. Publish one from the CLI.';
-    shares.innerHTML=list.map(x=>`<div class="share"><a href="${esc(x.url)}">${esc(x.url.replace('https://',''))}</a><span class="meta">${esc(x.kind)} · ${esc(x.visibility)} · ${x.expiresAt?'expires '+new Date(x.expiresAt).toLocaleString():'kept'}</span><button class="ghost" data-id="${esc(x.id)}">Remove</button></div>`).join('');
-  }
-  shares.addEventListener('click',async e=>{const id=e.target.dataset.id;if(!id)return;if(!confirm('Remove this share?'))return;await fetch('/v1/dashboard/shares/'+id,{method:'DELETE'});load()});
-  load().catch(err=>hint.textContent=err.message);
-</script>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Devshare</title>
+<style>
+:root{color-scheme:dark;--bg:#2C1925;--panel:#35202e;--ink:#f7edf3;--muted:#bfaeb8;--line:#5a4050;--accent:#ffc6df;--danger:#ff9ba8}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,sans-serif}main{width:min(1080px,calc(100% - 36px));margin:8vh auto}header{display:flex;align-items:end;justify-content:space-between;gap:2rem;margin-bottom:3.5rem}h1{margin:0;font-size:clamp(2.7rem,7vw,5.4rem);line-height:.85;letter-spacing:-.065em;font-weight:650}header p{margin:.6rem 0 0;color:var(--muted)}nav{display:flex;gap:.3rem}button{font:inherit}nav button,.ghost{border:0;background:transparent;color:var(--muted);padding:.55rem .75rem;border-radius:6px;cursor:pointer}nav button.active{background:var(--accent);color:var(--bg)}section{display:none}section.active{display:block}.bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}.bar h2{margin:0;font-size:1rem}.count{color:var(--muted);font-size:.85rem}.list{border-top:1px solid var(--line)}.item{display:grid;grid-template-columns:minmax(0,1.7fr) .65fr .65fr auto;gap:1rem;align-items:center;padding:1rem .15rem;border-bottom:1px solid var(--line)}.item a{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}.item a:hover{text-decoration:underline;text-underline-offset:3px}.meta{color:var(--muted);font-size:.82rem}.pill{width:max-content;padding:.18rem .5rem;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:.76rem}.pill.on{color:#bce9cb;border-color:#47705a}.danger{color:var(--danger)}.empty{color:var(--muted);padding:3rem 0}.new-key{display:grid;grid-template-columns:1fr auto;gap:.7rem;margin:1.4rem 0 2.4rem;max-width:650px}.new-key input{grid-column:1/-1;width:100%;padding:.7rem .8rem;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font:inherit}.scopes{display:flex;gap:.4rem;flex-wrap:wrap}.scopes label{display:flex;gap:.35rem;align-items:center;padding:.45rem .6rem;border:1px solid var(--line);border-radius:6px;color:var(--muted);font-size:.8rem}.primary{border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:var(--bg);padding:.6rem .9rem;font-weight:650;cursor:pointer}.secret{margin:0 0 2rem;padding:1rem;border:1px solid var(--accent);border-radius:8px;background:var(--panel)}.secret code{display:block;margin:.6rem 0;overflow:auto;color:var(--accent)}footer{margin-top:5rem;padding-top:1rem;border-top:1px solid var(--line);color:var(--muted);font-size:.8rem}@media(max-width:700px){main{margin:5vh auto}header{display:block;margin-bottom:2rem}nav{margin-top:1.5rem}.item{grid-template-columns:minmax(0,1fr) auto}.item .secondary{display:none}.new-key{display:block}.new-key>*{margin-bottom:.7rem}}
+</style></head><body><main>
+<header><div><h1>devshare</h1><p>small infrastructure for unfinished things.</p></div><nav><button class="active" data-view="shares">shares</button><button data-view="keys">api keys</button></nav></header>
+<section id="shares" class="active"><div class="bar"><h2>active shares</h2><span class="count" id="share-count"></span></div><div class="list" id="share-list"><div class="empty">loading…</div></div></section>
+<section id="keys"><div class="bar"><h2>api keys</h2><span class="count" id="key-count"></span></div><form class="new-key" id="new-key"><input name="label" placeholder="key name, e.g. laptop or codex" required><div class="scopes"><label><input type="checkbox" name="scope" value="publish" checked>publish</label><label><input type="checkbox" name="scope" value="public">public</label><label><input type="checkbox" name="scope" value="keep">keep</label><label><input type="checkbox" name="scope" value="tunnel">live tunnels</label><label><input type="checkbox" name="scope" value="list" checked>list</label><label><input type="checkbox" name="scope" value="delete" checked>delete</label></div><button class="primary">create key</button></form><div id="secret"></div><div class="list" id="key-list"><div class="empty">loading…</div></div></section>
+<footer>private and ephemeral by default.</footer>
+</main><script>
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const when=v=>v?new Date(v).toLocaleString():'never';
+document.querySelector('nav').onclick=e=>{if(!e.target.dataset.view)return;document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('active'));e.target.classList.add('active');document.querySelector('#'+e.target.dataset.view).classList.add('active')};
+async function shares(){const r=await fetch('/v1/dashboard/shares');if(!r.ok)throw Error('could not load shares');const xs=await r.json();document.querySelector('#share-count').textContent=xs.length;document.querySelector('#share-list').innerHTML=xs.length?xs.map(x=>`<div class="item"><div><a href="${esc(x.url)}" target="_blank">${esc(x.url.replace('https://',''))}</a><div class="meta">${esc(x.id)}</div></div><span class="pill ${x.online?'on':''}">${x.kind==='tunnel'?(x.online?'live':'offline'):'static'}</span><span class="meta secondary">${esc(x.visibility)} · ${x.expiresAt?'until '+when(x.expiresAt):'kept'}</span><button class="ghost danger" data-remove-share="${esc(x.id)}">remove</button></div>`).join(''):'<div class="empty">no active shares.</div>'}
+async function keys(){const r=await fetch('/v1/dashboard/tokens');if(!r.ok)throw Error('could not load keys');const xs=await r.json();document.querySelector('#key-count').textContent=xs.filter(x=>!x.revoked).length+' active';document.querySelector('#key-list').innerHTML=xs.length?xs.map(x=>`<div class="item"><div><span>${esc(x.label)}</span><div class="meta">${esc(x.id)}</div></div><span class="pill ${x.revoked?'':'on'}">${x.revoked?'revoked':'active'}</span><span class="meta secondary">${esc(x.scopes.join(', '))}</span>${x.bootstrap||x.revoked?'':`<button class="ghost danger" data-revoke="${esc(x.id)}">revoke</button>`}</div>`).join(''):'<div class="empty">no api keys.</div>'}
+document.querySelector('#new-key').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),body={label:f.get('label'),scopes:f.getAll('scope')};const r=await fetch('/v1/dashboard/tokens',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});if(!r.ok){alert(await r.text());return}const x=await r.json();document.querySelector('#secret').innerHTML=`<div class="secret"><strong>copy this key now</strong><code>${esc(x.token)}</code><button class="ghost" id="copy">copy</button></div>`;document.querySelector('#copy').onclick=()=>navigator.clipboard.writeText(x.token);e.target.reset();keys()};
+document.body.onclick=async e=>{if(e.target.dataset.removeShare&&confirm('remove this share?')){await fetch('/v1/dashboard/shares/'+e.target.dataset.removeShare,{method:'DELETE'});shares()}if(e.target.dataset.revoke&&confirm('revoke this api key?')){await fetch('/v1/dashboard/tokens/'+e.target.dataset.revoke,{method:'DELETE'});keys()}};
+Promise.all([shares(),keys()]).catch(e=>document.querySelector('#share-list').innerHTML='<div class="empty">'+esc(e.message)+'</div>');
+</script></body></html>

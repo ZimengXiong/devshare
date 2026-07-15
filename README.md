@@ -33,10 +33,3 @@ devshare serve --public 5173
    - issuer, client ID, and client secret copied into `.env`
 
    public generated shares remain public and do not require OIDC.
-
-authentik users can leave Signing Key empty or select a certificate; devshare
-supports both. keycloak users should enable Client authentication and Standard
-flow. set `DEVSHARE_OIDC_ISSUER`, `DEVSHARE_OIDC_CLIENT_ID`, and
-`DEVSHARE_OIDC_CLIENT_SECRET`, then restart devshare.
-
-devshare is made to be small, it's a SQLite database plus extracted site directories under `/var/lib/devshare`.

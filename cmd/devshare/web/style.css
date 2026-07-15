@@ -1,5 +1,5 @@
-@import "rows.css";
-@import "form.css";
+@import "rows.css?v=0.3.8";
+@import "form.css?v=0.3.8";
 
 :root {
   color-scheme: dark;

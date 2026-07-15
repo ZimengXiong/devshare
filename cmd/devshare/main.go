@@ -725,7 +725,8 @@ func (s *Server) janitor() {
 }
 
 type clientConfig struct {
-	URL, Token string `json:"url"`
+	URL   string `json:"url"`
+	Token string `json:"token"`
 }
 
 func configPath() string {

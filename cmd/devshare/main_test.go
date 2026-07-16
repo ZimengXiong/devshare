@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"database/sql"
 	"encoding/json"
 	"net/http/httptest"
 	"os"
@@ -35,6 +36,25 @@ func TestNormalizeURLEmpty(t *testing.T) {
 func TestRandomTextLength(t *testing.T) {
 	if got := randomText(32); len(got) != 32 {
 		t.Fatalf("got length %d", len(got))
+	}
+}
+
+func TestNewNamesUsesTwoCharacterSuffix(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	s := &Server{cfg: Config{SiteDomain: "example.com"}, db: db}
+	if err := s.migrate(); err != nil {
+		t.Fatal(err)
+	}
+	_, hostname := s.newNames()
+	label := strings.TrimSuffix(hostname, ".example.com")
+	parts := strings.Split(label, "-")
+	if len(parts) != 3 || len(parts[2]) != 2 {
+		t.Fatalf("got hostname %q", hostname)
 	}
 }
 

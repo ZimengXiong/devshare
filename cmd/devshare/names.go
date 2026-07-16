@@ -6,7 +6,7 @@ var nouns = []string{"brook", "cedar", "comet", "dawn", "field", "harbor", "lake
 
 func (s *Server) newNames() (string, string) {
 	for {
-		suffix := randomText(4)
+		suffix := randomText(2)
 		h := adjectives[int(suffix[0])%len(adjectives)] + "-" + nouns[int(suffix[1])%len(nouns)] + "-" + suffix
 		var n int
 		if s.db.QueryRow(`SELECT count(*) FROM shares WHERE hostname=?`, h+"."+s.cfg.SiteDomain).Scan(&n) == nil && n == 0 {
